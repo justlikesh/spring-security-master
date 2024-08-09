@@ -14,6 +14,8 @@ public class UserService {
 
     @Transactional
     public void createUser(Account account){
-        userRepository.save(account);
+//        userRepository.save(account);
+        Account savedAccount = userRepository.save(account);
+        System.out.println("Saved Account: " + savedAccount);
     }
 }

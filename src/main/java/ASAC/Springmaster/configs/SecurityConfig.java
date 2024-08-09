@@ -23,7 +23,8 @@ public class SecurityConfig {
         http                                                     // 인증, 인가 정책을 설정할수잇다
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**","/images/**","/js/**","/favicon.*","/*/icon-*").permitAll()
-                        .requestMatchers("/","signup").permitAll()
+                        .requestMatchers("/","signup" +
+                                "").permitAll()
                         .anyRequest().authenticated())
                 .formLogin(form -> form.loginPage("/login").permitAll()
                 )
@@ -37,12 +38,12 @@ public class SecurityConfig {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 
-    @Bean
-    public UserDetailsService userDetailsService(){
-        UserDetails user = User.withUsername("user")
-                .password("{noop}1111")
-                .roles("USER").build();            // 사용자 여려멍을 추가할 수 도 있다.
-
-        return new InMemoryUserDetailsManager(user);
-    }
+//    @Bean
+//    public UserDetailsService userDetailsService(){
+//        UserDetails user = User.withUsername("user")
+//                .password("{noop}1111")
+//                .roles("USER").build();            // 사용자 여려멍을 추가할 수 도 있다.
+//
+//        return new InMemoryUserDetailsManager(user);
+//    }
 }
