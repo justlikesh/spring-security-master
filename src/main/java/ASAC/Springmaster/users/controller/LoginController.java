@@ -1,4 +1,4 @@
-package ASAC.Springmaster.controller;
+package ASAC.Springmaster.users.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,4 +9,10 @@ public class LoginController {
     public String login(){
         return "login/login";
     }
+
+    @GetMapping("/signup")
+    public String signup(){
+        return "login/signup";
+    }
+
 }

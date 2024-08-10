@@ -8,6 +8,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -21,13 +23,18 @@ public class SecurityConfig {
         http                                                     // 인증, 인가 정책을 설정할수잇다
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**","/images/**","/js/**","/favicon.*","/*/icon-*").permitAll()
-                        .requestMatchers("/").permitAll()
+                        .requestMatchers("/","signup").permitAll()
                         .anyRequest().authenticated())
                 .formLogin(form -> form.loginPage("/login").permitAll()
                 )
         ;
 
         return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder(){    // 비밀번호를 암호화하고 검증하는 설정
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 
     @Bean
