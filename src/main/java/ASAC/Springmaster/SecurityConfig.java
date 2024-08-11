@@ -21,6 +21,8 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import java.io.IOException;
@@ -31,35 +33,26 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {  // 여기서 별도의 설정을 할수잇다
+
+        HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
+        requestCache.setMatchingRequestParameterName("customParam=y");
+
         http                                                     // 인증, 인가 정책을 성정할수잇다
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(".logoutSuccess").permitAll()
                         .anyRequest().authenticated())
-                .formLogin(Customizer.withDefaults())
-                .logout(logout -> logout
-                        .logoutUrl("/logout")       // logoutURL 과 logoutRequestMatcher 이 동시에있을때는 requestMacher 이 우선 적용됌
-                        .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "POST"))
-                        .logoutSuccessUrl("/logoutSuccess")     // 성공시 이동 url
-                        .logoutSuccessHandler(new LogoutSuccessHandler() {
+                .formLogin(form -> form
+                        .successHandler(new AuthenticationSuccessHandler() {
                             @Override
-                            public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-                                response.sendRedirect("/logoutSuccess");
+                            public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+                                SavedRequest savedRequest = requestCache.getRequest(request, response);
+                                String redirectUrl = savedRequest.getRedirectUrl();
+                                response.sendRedirect(redirectUrl);
                             }
-                        })
-                        .deleteCookies("JSESSIONID", "remember-me")     //로그아웃했을때 쿠키 지우기
-                        .invalidateHttpSession(true)        // 로그아웃했을때 세션 무효화
-                        .clearAuthentication(true)          // security context 안에있는 authentication 객체를 없앰
-                        .addLogoutHandler(new LogoutHandler() {
-                            @Override
-                            public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
-                                HttpSession session = request.getSession();
-                                session.invalidate();
-                                SecurityContextHolder.getContextHolderStrategy().getContext().setAuthentication(null);      // 기존의 authentication 객체가 사라짐다
-                                SecurityContextHolder.getContextHolderStrategy().clearContext();        // security context 객체도 clear 해줌
-                            }
-                        })
-                        .permitAll()
-                );
+                        }))
+                .requestCache(cache -> cache.requestCache(requestCache))
+        ;
+
 
         return http.build();
     }
