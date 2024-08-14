@@ -27,15 +27,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {  // 여기서 별도의 설정을 할수잇다
         http                                                     // 인증, 인가 정책을 성정할수잇다
-                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())      //http 설정에대한 인가설정을 하겠다 어떤 요청에도 인증을 받겠따
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/anonymous").hasRole("GUEST") //anonymous 에 접근 가능한 사용자는 GUEST 만 가능하다
+                        .requestMatchers("/anonymousContext", "/authentication").permitAll()  // 모두가능하도록
+                        .anyRequest().authenticated())      //http 설정에대한 인가설정을 하겠다 어떤 요청에도 인증을 받겠따
                 .formLogin(Customizer.withDefaults())
-                .rememberMe(rememberMe -> rememberMe
-                        .alwaysRemember(true)               // 언제라도 기억하기 인증을 하겠다 체크박스 체크안해도기억하기 인증하겠다
-                        .tokenValiditySeconds(3600)         // 토큰 만료시간 1시간
-                        .userDetailsService(userDetailsService())               // 사용자 정보 가져오기
-                        .rememberMeParameter("remember")              // 매개변수받기
-                        .rememberMeCookieName("remember")             // 쿠키이름
-                        .key("security")
+                .anonymous(anonymous -> anonymous
+                        .principal("guest")                     // 익명사용자
+                        .authorities("ROLE_GUEST")              // 권한
                 );
         return http.build();
     }
