@@ -28,22 +28,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {  // 여기서 별도의 설정을 할수잇다
         http                                                     // 인증, 인가 정책을 성정할수잇다
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())      //http 설정에대한 인가설정을 하겠다 어떤 요청에도 인증을 받겠따
-                .formLogin(form -> form
-//                        .loginPage("/loginPage")
-                        .loginProcessingUrl("/loginProc")
-                        .defaultSuccessUrl("/", true) //ture 주면 어떤 경우라도 디폴트로가고 false 면 해당 url 에 남아잇는다
-                        .usernameParameter("userId")
-                        .passwordParameter("passwd")
-                        .successHandler((request, response, authentication) -> {     // 위에 설정보다 핸들러가 더 우선순위이다
-                            System.out.println("authentication :" + authentication);
-                            response.sendRedirect("/home");
-                        })
-                        .failureHandler((request, response, exception) -> {
-                            System.out.println("exception:" + exception.getMessage());
-                            response.sendRedirect("/login");
-                        })
-                        .permitAll()
-                );
+                .httpBasic(basic -> basic.authenticationEntryPoint(new CustomAuthenticationEntryPoint()));
 
         return http.build();
     }
