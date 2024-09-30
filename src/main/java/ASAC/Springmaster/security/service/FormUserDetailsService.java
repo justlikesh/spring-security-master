@@ -1,5 +1,6 @@
 package ASAC.Springmaster.security.service;
 
+import ASAC.Springmaster.domain.dto.AccountContext;
 import ASAC.Springmaster.domain.dto.AccountDto;
 import ASAC.Springmaster.domain.entity.Account;
 import ASAC.Springmaster.users.repository.UserRepository;
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Service
+@Service("userDetailsService")
 @RequiredArgsConstructor
 public class FormUserDetailsService implements UserDetailsService {
 
@@ -23,16 +24,16 @@ public class FormUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        Account account = userRepository.findByUsername(username);
+        Account account = userRepository.findByUsername(username);      // 사용자의 정보를 가져와서
         if(account == null){
             throw new UsernameNotFoundException("No user found with username" + username);
         }
 
         List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(account.getRoles()));
         ModelMapper mapper = new ModelMapper();
-        mapper.map(account, AccountDto.class);
+        AccountDto accountDto = mapper.map(account, AccountDto.class);
 
 
-        return null;
+        return new AccountContext(accountDto, authorities);     // userDetails 로 반환
     }
 }
