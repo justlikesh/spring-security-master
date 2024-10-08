@@ -10,10 +10,10 @@ public class RestAuthenticationToken extends AbstractAuthenticationToken {
     private final Object principal;
     private final Object credentials;
 
-    public RestAuthenticationToken(Collection<? extends GrantedAuthority> authorities, Object credentials, Object principal) {
+    public RestAuthenticationToken(Collection<? extends GrantedAuthority> authorities, Object principal, Object credentials) {
         super(authorities);
-        this.credentials = credentials;
         this.principal = principal;
+        this.credentials = credentials;
         setAuthenticated(true);
     }
 
