@@ -1,9 +1,9 @@
 package ASAC.Springmaster.domain.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
+import java.util.List;
+import java.util.Set;
 
 
 @Builder
@@ -15,5 +15,5 @@ public class AccountDto {
     private String username;
     private String password;
     private int age;
-    private String roles;
+    private List<String> roles;
 }
