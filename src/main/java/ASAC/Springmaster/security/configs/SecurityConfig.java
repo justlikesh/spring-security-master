@@ -1,7 +1,8 @@
 package ASAC.Springmaster.security.configs;
 
-import ASAC.Springmaster.security.filters.RestAuthenticationFilter;
-import ASAC.Springmaster.security.handler.FormAccessDeniedHandler;
+import ASAC.Springmaster.security.dsl.RestApiDsl;
+import ASAC.Springmaster.security.entrypoint.RestAuthenticationEntryPoint;
+import ASAC.Springmaster.security.handler.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -10,17 +11,12 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationDetailsSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.factory.PasswordEncoderFactories;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
 
 @EnableWebSecurity
@@ -29,69 +25,64 @@ import org.springframework.security.web.authentication.WebAuthenticationDetails;
 public class SecurityConfig {
 
     private final AuthenticationProvider authenticationProvider;
-    private final AuthenticationSuccessHandler successHandler;
-    private final AuthenticationFailureHandler failureHandler;
+    private final AuthenticationProvider restAuthenticationProvider;
     private final AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> authenticationDetailsSource;
-
+    private final FormAuthenticationSuccessHandler successHandler;
+    private final FormAuthenticationFailureHandler failureHandler;
+    private final RestAuthenticationSuccessHandler restSuccessHandler;
+    private final RestAuthenticationFailureHandler restFailureHandler;
+    private final AuthorizationManager<RequestAuthorizationContext> authorizationManager;
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {  // 여기서 별도의 설정을 할수잇다
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        http                                                     // 인증, 인가 정책을 설정할수잇다
+        http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/css/**","/images/**","/js/**","/favicon.*","/*/icon-*").permitAll()
-                        .requestMatchers("/","signup","/login*").permitAll()
-                        .requestMatchers("/user").hasAuthority("ROLE_USER")
-                        .requestMatchers("/manager").hasAuthority("ROLE_MANAGER")
-                        .requestMatchers("/admin").hasAuthority("ROLE_ADMIN")
-                        .anyRequest().authenticated())
+                        .anyRequest().access(authorizationManager))
+
                 .formLogin(form -> form
-                        .loginPage("/login").permitAll()
+                        .loginPage("/login")
                         .authenticationDetailsSource(authenticationDetailsSource)
                         .successHandler(successHandler)
                         .failureHandler(failureHandler)
-                )
+                        .permitAll())
                 .authenticationProvider(authenticationProvider)
-                .exceptionHandling(exception -> exception.accessDeniedHandler(new FormAccessDeniedHandler("/denied")))
+                .exceptionHandling(exception -> exception
+                        .accessDeniedHandler(new FormAccessDeniedHandler("/denied"))
+                )
         ;
-
         return http.build();
     }
+
 
     @Bean
     @Order(1)
-    public SecurityFilterChain restSecurityFilterChain(HttpSecurity http, AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {  // 여기서 별도의 설정을 할수잇다
+    public SecurityFilterChain restSecurityFilterChain(HttpSecurity http) throws Exception {
 
-//        AuthenticationManagerBuilder managerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
-//        AuthenticationManager authenticationManager = authenticationManagerBuilder.build();
+        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+        authenticationManagerBuilder.authenticationProvider(restAuthenticationProvider);
+        AuthenticationManager authenticationManager = authenticationManagerBuilder.build();            // build() 는 최초 한번 만 호출해야 한다
 
-
-        http                                                 // 인증, 인가 정책을 설정할수잇다
-                .securityMatcher("/api/login")
+        http
+                .securityMatcher("/api/**")
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/css/**","/images/**","/js/**","/favicon.*","/*/icon-*").permitAll()
-                        .anyRequest().permitAll())
-                .csrf(AbstractHttpConfigurer::disable)
-//                .addFilterBefore(restAuthenticationFilter(authenticationManager), UsernamePasswordAuthenticationFilter.class)
-//                .authenticationManager(authenticationManager)
+                        .requestMatchers("/css/**", "/images/**", "/js/**", "/favicon.*", "/*/icon-*").permitAll()
+                        .requestMatchers("/api","/api/login").permitAll()
+                        .requestMatchers("/api/user").hasAuthority("ROLE_USER")
+                        .requestMatchers("/api/manager").hasAuthority("ROLE_MANAGER")
+                        .requestMatchers("/api/admin").hasAuthority("ROLE_ADMIN")
+                        .anyRequest().authenticated())
+//                .csrf(AbstractHttpConfigurer::disable)
+                .authenticationManager(authenticationManager)
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(new RestAuthenticationEntryPoint())
+                        .accessDeniedHandler(new RestAccessDeniedHandler()))
+                .with(new RestApiDsl<>(), restDsl -> restDsl
+                                            .restSuccessHandler(restSuccessHandler)
+                                            .restFailureHandler(restFailureHandler)
+                                            .loginPage("/api/login")
+                                            .loginProcessingUrl("/api/login"))
         ;
 
         return http.build();
     }
-
-    private RestAuthenticationFilter restAuthenticationFilter(AuthenticationManager authenticationManager){
-        RestAuthenticationFilter restAuthenticationFilter = new RestAuthenticationFilter();
-        restAuthenticationFilter.setAuthenticationManager(authenticationManager);
-        return restAuthenticationFilter;
-    }
-
-
-
-//    @Bean
-//    public UserDetailsService userDetailsService(){
-//        UserDetails user = User.withUsername("user")
-//                .password("{noop}1111")
-//                .roles("USER").build();            // 사용자 여려멍을 추가할 수 도 있다.
-//
-//        return new InMemoryUserDetailsManager(user);
-//    }
 }
