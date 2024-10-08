@@ -9,7 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class AuthConfig {
 
     @Bean
-    public PasswordEncoder passwordEncoder(){    // 비밀번호를 암호화하고 검증하는 설정
+    public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 }
