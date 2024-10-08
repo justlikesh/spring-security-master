@@ -10,18 +10,18 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import java.io.IOException;
 
 public class FormAccessDeniedHandler implements AccessDeniedHandler {
-    private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
-    private final String errorPage;
+	private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
+	private final String errorPage;
 
-    public FormAccessDeniedHandler(String errorPage) {
-        this.errorPage = errorPage;
-    }
+	public FormAccessDeniedHandler(String errorPage) {
+		this.errorPage = errorPage;
+	}
 
-    @Override
-    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException {
+	@Override
+	public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException {
 
-        String deniedUrl = errorPage + "?exception=" + accessDeniedException.getMessage();
-        redirectStrategy.sendRedirect(request, response, deniedUrl);
+		String deniedUrl = errorPage + "?exception=" + accessDeniedException.getMessage();
+		redirectStrategy.sendRedirect(request, response, deniedUrl);
 
-    }
+	}
 }

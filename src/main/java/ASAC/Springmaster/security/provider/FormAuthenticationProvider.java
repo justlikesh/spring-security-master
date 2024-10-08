@@ -1,7 +1,7 @@
 package ASAC.Springmaster.security.provider;
 
 import ASAC.Springmaster.domain.dto.AccountContext;
-import ASAC.Springmaster.security.details.FormAuthenticationDetails;
+import ASAC.Springmaster.security.details.FormWebAuthenticationDetails;
 import ASAC.Springmaster.security.exception.SecretException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -13,7 +13,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-
 @Component("authenticationProvider")
 @RequiredArgsConstructor
 public class FormAuthenticationProvider implements AuthenticationProvider {
@@ -23,18 +22,21 @@ public class FormAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+
         String loginId = authentication.getName();
         String password = (String) authentication.getCredentials();
-        AccountContext accountContext = (AccountContext) userDetailsService.loadUserByUsername(loginId);
 
-        if(!passwordEncoder.matches(password, accountContext.getPassword())){
+        AccountContext accountContext = (AccountContext)userDetailsService.loadUserByUsername(loginId);
+
+        if (!passwordEncoder.matches(password, accountContext.getPassword())) {
             throw new BadCredentialsException("Invalid password");
         }
 
-        String secretKey = ((FormAuthenticationDetails) authentication.getDetails()).getSecretKey();
-        if(secretKey == null || !secretKey.equals("secret")){
-            throw new SecretException("Invalid secret");
+        String secretKey = ((FormWebAuthenticationDetails) authentication.getDetails()).getSecretKey();
+        if (secretKey == null || !secretKey.equals("secret")) {
+            throw new SecretException("Invalid Secret");
         }
+
         return new UsernamePasswordAuthenticationToken(accountContext.getAccountDto(), null, accountContext.getAuthorities());
     }
 
